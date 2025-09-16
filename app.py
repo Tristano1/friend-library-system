@@ -1,6 +1,10 @@
-from flask import Flask, request, redirect, render_template
+from flask import Flask, request, redirect, render_template, 
+from flask import session
+app.secret_key = "isurehopethisworks"  # change this to something more secure
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+
 import os
 import uuid  # at the top with other imports
 
@@ -11,6 +15,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
+
+
 # User table model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,7 +24,9 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     display_name = db.Column(db.String(80), nullable=False)
-
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
 
 # Create tables if they don't exist
 with app.app_context():
@@ -59,12 +67,20 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
 
-        # Look up user
+        # Look up user by email
         user = User.query.filter_by(email=email).first()
+
         if user and check_password_hash(user.password, password):
-            return f"✅ Logged in as {user.email}!"
-        return "❌ Invalid email or password"
+            # ✅ Successful login → store info in session
+            session["user_guid"] = user.guid
+            session["display_name"] = user.display_name
+
+            return f"✅ Logged in! Welcome, {user.display_name}."
+        else:
+            return "❌ Invalid email or password"
+
     return render_template("login.html")
+
 
 # Run the app
 if __name__ == "__main__":
