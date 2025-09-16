@@ -17,8 +17,7 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)
 
 # Create tables if they don't exist
-@app.before_first_request
-def create_tables():
+with app.app_context():
     db.create_all()
 
 # Home route
