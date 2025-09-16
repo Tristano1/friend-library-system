@@ -35,6 +35,7 @@ def signup():
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
+        display_name = request.form["display_name"]
 
         # Check if email already exists
         existing_user = User.query.filter_by(email=email).first()
