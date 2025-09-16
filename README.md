@@ -9,6 +9,6 @@ This website aims to be a system to allow you to list your physical media to you
 
 
 Goals:
-I want to create a system that basically does the same thing as the OPL, but with friends who can manually list their physical media.
-
-It should allow people to list media, group it (movies, games, systems, maybe even tools and board games.)
+1. Create somewhat secure accounts
+2. List some media with some info about that media
+3. Allow adding friends
