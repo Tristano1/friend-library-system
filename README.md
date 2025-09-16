@@ -11,4 +11,3 @@ This website aims to be a system to allow you to list your physical media to you
 Goals:
 1. Create somewhat secure accounts
 2. List some media with some info about that media
-3. Allow adding friends
