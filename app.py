@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, render_template, 
+from flask import Flask, request, redirect, render_template
 from flask import session
 app.secret_key = "isurehopethisworks"  # change this to something more secure
 from flask_sqlalchemy import SQLAlchemy
