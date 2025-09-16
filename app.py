@@ -2,6 +2,7 @@ from flask import Flask, request, redirect, render_template
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import uuid  # at the top with other imports
 
 app = Flask(__name__)
 
@@ -13,8 +14,11 @@ db = SQLAlchemy(app)
 # User table model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    guid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    display_name = db.Column(db.String(80), nullable=False)
+
 
 # Create tables if they don't exist
 with app.app_context():
