@@ -1,6 +1,6 @@
 from flask import Flask, request, redirect, render_template
 from flask import session
-app.secret_key = "isurehopethisworks"  # change this to something more secure
+app.secret_key = ("SECRET_KEY", "dev-secret") # change this to something more secure
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
