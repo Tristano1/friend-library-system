@@ -1,6 +1,14 @@
 <h2>Add Item</h2>
 <form method="POST">
   <input type="text" name="item_name" placeholder="Item Name" required><br>
-  <input type="number" name="loan_length" placeholder="Loan Length (optional)"><br>
+
+  <input 
+    type="number" 
+    name="loan_length" 
+    value="{{ default_loan_length }}" 
+    min="1" 
+    required
+  ><br>
+
   <button type="submit">Add Item</button>
 </form>

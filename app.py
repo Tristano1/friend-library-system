@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
 import os
-import uuid  # at the top with other imports
+import uuid
 
 app = Flask(__name__)
 
@@ -16,10 +16,11 @@ db = SQLAlchemy(app)
 
 default_global_loan_length = 21  # days
 
+# ----------- MODELS --------------------
 # User table model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    guid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    user_guid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     display_name = db.Column(db.String(80), nullable=False)
@@ -30,10 +31,10 @@ class User(db.Model):
 
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    item_guid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     name = db.Column(db.String(200), nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    default_item_loan_length = db.Column(db.Integer, nullable=True)  # item-specific override
-
+    loan_length = db.Column(db.Integer, nullable=True)  # item-specific override
 
 # Create tables if they don't exist
 with app.app_context():
@@ -42,7 +43,12 @@ with app.app_context():
 # Home route
 @app.route("/")
 def home():
-    return "<h1>Welcome to Friend Library 📚</h1><p><a href='/signup'>Sign Up</a> | <a href='/login'>Login</a></p>"
+    user_guid = session.get("user_guid")
+    if user_guid:
+        user = User.query.filter_by(user_guid=user_guid).first()
+        if user:
+            return f"Welcome, {user.display_name}!"
+    return "Welcome to Friend Library! <a href='/signup'>Sign Up</a> | <a href='/login'>Login</a>"
 
 # Sign up route
 @app.route("/signup", methods=["GET", "POST"])
@@ -79,7 +85,7 @@ def login():
 
         if user and check_password_hash(user.password, password):
             # ✅ Successful login → store info in session
-            session["user_guid"] = user.guid
+            session["user_guid"] = user.user_guid
             session["display_name"] = user.display_name
 
             return f"✅ Logged in! Welcome, {user.display_name}."
@@ -91,30 +97,26 @@ def login():
 # Adding items stuff
 @app.route("/add-item", methods=["GET", "POST"])
 def add_item():
+    user_guid = session.get("user_guid")
+    user = User.query.filter_by(guid=user_guid).first()
+    if not user:
+        return "User not found. Please log in first."
+
     if request.method == "POST":
         item_name = request.form["item_name"]
-        # Get the logged-in user
-        user_guid = session.get("user_guid")
-        user = User.query.filter_by(guid=user_guid).first()
-        if not user:
-            return "User not found. Log in first."
+        loan_length = int(request.form["loan_length"])  # comes from the input box
 
-        # Get loan length from form, or fallback
-        form_loan_length = request.form.get("loan_length")
-        if form_loan_length:
-            default_item_loan_length = int(form_loan_length)  # item-specific
-        elif user.item_loan_length:
-            default_user_loan_length = user.default_loan_length  # user default
-        else:
-            default_global_loan_length = global_default_loan_length  # global default
-
-        # Create item
-        new_item = Item(name=item_name, owner_id=user.id, loan_length=loan_length)
+        new_item = Item(
+            name=item_name,
+            owner_id=user.id,
+            loan_length=loan_length  # always set from form
+        )
         db.session.add(new_item)
         db.session.commit()
         return f"Added item '{item_name}' with loan length {loan_length} days."
 
-    return render_template("add_item.html")
+    # When showing the form, pass in the user’s default loan length
+    return render_template("add_item.html", default_loan_length=user.default_loan_length)
 
 # Run the app
 if __name__ == "__main__":
