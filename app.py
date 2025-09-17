@@ -1,6 +1,5 @@
-from flask import Flask, request, redirect, render_template
-from flask import session
-app.secret_key = ("SECRET_KEY", "dev-secret") # change this to something more secure
+from flask import Flask, request, redirect, render_template, session
+app.secret_key = ("SECRET_KEY", "dev-secret")
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
@@ -15,7 +14,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-
+default_global_loan_length = 21  # days
 
 # User table model
 class User(db.Model):
@@ -26,7 +25,15 @@ class User(db.Model):
     display_name = db.Column(db.String(80), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    default_user_loan_length = db.Column(db.Integer, default=21)  # user-specific default
     is_active = db.Column(db.Boolean, default=True)
+
+class Item(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    default_item_loan_length = db.Column(db.Integer, nullable=True)  # item-specific override
+
 
 # Create tables if they don't exist
 with app.app_context():
@@ -81,6 +88,33 @@ def login():
 
     return render_template("login.html")
 
+# Adding items stuff
+@app.route("/add-item", methods=["GET", "POST"])
+def add_item():
+    if request.method == "POST":
+        item_name = request.form["item_name"]
+        # Get the logged-in user
+        user_guid = session.get("user_guid")
+        user = User.query.filter_by(guid=user_guid).first()
+        if not user:
+            return "User not found. Log in first."
+
+        # Get loan length from form, or fallback
+        form_loan_length = request.form.get("loan_length")
+        if form_loan_length:
+            default_item_loan_length = int(form_loan_length)  # item-specific
+        elif user.item_loan_length:
+            default_user_loan_length = user.default_loan_length  # user default
+        else:
+            default_global_loan_length = global_default_loan_length  # global default
+
+        # Create item
+        new_item = Item(name=item_name, owner_id=user.id, loan_length=loan_length)
+        db.session.add(new_item)
+        db.session.commit()
+        return f"Added item '{item_name}' with loan length {loan_length} days."
+
+    return render_template("add_item.html")
 
 # Run the app
 if __name__ == "__main__":
