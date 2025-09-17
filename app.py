@@ -53,46 +53,54 @@ def home():
 # Sign up route
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
+    error = None
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-        display_name = request.form["display_name"]
+        email = request.form.get("email")
+        password = request.form.get("password")
+        display_name = request.form.get("display_name")
 
-        # Check if email already exists
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            return "⚠️ Email already registered. Try logging in instead."
+        if not email or not password or not display_name:
+            error = "All fields are required."
+        else:
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                error = "This email is already registered. Try logging in."
+            else:
+                try:
+                    hashed_password = generate_password_hash(password, method="sha256")
+                    new_user = User(
+                        email=email,
+                        password=hashed_password,
+                        display_name=display_name
+                    )
+                    db.session.add(new_user)
+                    db.session.commit()
+                    session["user_guid"] = new_user.user_guid
+                    return redirect(url_for("home"))
+                except Exception as e:
+                    db.session.rollback()
+                    error = f"Error creating account: {e}"
 
-        # Hash password before saving
-        hashed_pw = generate_password_hash(password, method="sha256")
-        new_user = User(email=email, password=hashed_pw)
+    return render_template("signup.html", error=error)
 
-        db.session.add(new_user)
-        db.session.commit()
-
-        return redirect("/login")
-    return render_template("signup.html")
 
 # Login route
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    error = None
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.form.get("email")
+        password = request.form.get("password")
 
-        # Look up user by email
         user = User.query.filter_by(email=email).first()
-
         if user and check_password_hash(user.password, password):
-            # ✅ Successful login → store info in session
             session["user_guid"] = user.user_guid
-            session["display_name"] = user.display_name
-
-            return f"✅ Logged in! Welcome, {user.display_name}."
+            return redirect(url_for("home"))
         else:
-            return "❌ Invalid email or password"
+            error = "Invalid email or password."
 
-    return render_template("login.html")
+    return render_template("login.html", error=error)
+
 
 # Adding items stuff
 @app.route("/add-item", methods=["GET", "POST"])
