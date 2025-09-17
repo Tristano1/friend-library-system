@@ -1,5 +1,4 @@
 from flask import Flask, request, redirect, render_template, session
-app.secret_key = ("SECRET_KEY", "dev-secret")
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
@@ -8,6 +7,7 @@ import os
 import uuid
 
 app = Flask(__name__)
+app.secret_key = ("SECRET_KEY", "dev-secret")
 
 # Use SQLite (local file database)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
