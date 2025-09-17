@@ -1,0 +1,19 @@
+<h2>My Items</h2>
+
+{% if items %}
+  <ul>
+    {% for item in items %}
+      <li>
+        <strong>{{ item.item_name }}</strong><br>
+        Loan Length: {{ item.loan_length }} days<br>
+        Item GUID: {{ item.item_guid }}
+      </li>
+      <br>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>You don’t have any items yet. <a href="/add_item">Add one</a></p>
+{% endif %}
+
+<p><a href="/add_item">Add another item</a></p>
+<p><a href="/">Home</a></p>

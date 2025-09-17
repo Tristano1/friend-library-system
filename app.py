@@ -118,6 +118,19 @@ def add_item():
     # When showing the form, pass in the user’s default loan length
     return render_template("add_item.html", default_loan_length=user.default_loan_length)
 
+@app.route("/my_items")
+def my_items():
+    if "user_guid" not in session:
+        return redirect("/login")
+
+    user = User.query.filter_by(user_guid=session["user_guid"]).first()
+    if not user:
+        return redirect("/login")
+
+    items = Item.query.filter_by(user_id=user.id).all()
+    return render_template("my_items.html", items=items)
+
+
 # Run the app
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render provides a PORT
